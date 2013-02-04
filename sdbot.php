@@ -1,4 +1,5 @@
 <?php
+
 /*
 Make the MIN_BET and MAX_BET a percentage/fraction of the current balance
 
@@ -14,6 +15,7 @@ OR after a WIN! and the ratio of win loses is grater than XYZ3 and a minimum of 
 
 Always wait for confirmed balance to avoid the larger fees.(no rush to lose everything)
 */
+
 require_once('jsonRPCClient.php');
 
 define('RPCUSER',     'myuser');
@@ -99,7 +101,9 @@ function get_balance() {
 // soon.
 
 // Applying the following patch to the bitcoin source code and
-// rebuilding fixes the issue:
+// rebuilding fixes the issue, but is probably too much to ask of most
+// players.  I suppose we could just wait for all funds to confirm
+// before placing each bet, but that really slows things down.
 
 /* ------------------------------------------------------------------------
 diff --git a/src/rpcwallet.cpp b/src/rpcwallet.cpp
@@ -218,7 +222,7 @@ function play($balance) {
                 printf("total fee = " . BTC_FORMAT . "\n", $total_fee);
             }
 
-            // wait for the balance to go up, indicating the SD payment arrived
+            // wait for the balance to change, indicating the SD payment arrived
             while (($balance = get_balance()) == $balance_after_betting) {
                 sleep(3);
                 print ".";

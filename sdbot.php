@@ -35,10 +35,10 @@ define('STASH_PERCENTAGE',              90); // %
 define('STASH_THRESHOLD',               0.025); 
 
 // what percentage of our balance do we bet as the first bet
-define('MIN_BET_AS_BALANCE_PERCENTAGE', 1); // %
+define('MIN_BET_AS_BALANCE_PERCENTAGE', 0.9); // %
 
 // what percentage of our balance are we willing to bet in one go
-define('MAX_BET_AS_BALANCE_PERCENTAGE', 50); // %
+define('MAX_BET_AS_BALANCE_PERCENTAGE', 100); // %
 
 // stop once we've sent this much to the stash address
 define('TARGET_WINNINGS',               0.05);
@@ -66,6 +66,9 @@ define('WAIT_FOR_CONFIRMS',             true);
 
 // set min fee while playing
 define('FEE_WHILE_PLAYING',             0.001);
+
+// set min fee when stashing
+define('FEE_WHILE_STASHING',            0);
 
 // set min fee back after playing
 define('FEE_AFTER_PLAYING',             0);
@@ -130,11 +133,15 @@ function send_coins($amount, $address) {
 }
 
 function send_bet($amount) {
+    set_fee(FEE_WHILE_PLAYING);
     send_coins($amount, BET_ADDRESS);
+    set_fee(FEE_AFTER_PLAYING);
 }
 
 function stash_coin($amount) {
+    set_fee(FEE_WHILE_STASHING);
     send_coins($amount, STASH_ADDRESS);
+    set_fee(FEE_AFTER_PLAYING);
 }
 
 function play($balance) {
@@ -161,6 +168,11 @@ function play($balance) {
         $bet = $min_bet;
 
         while ($bet <= $max_bet) {
+            if (DEBUG) {
+                print "balance: " . $balance . "\n";
+                print "pending_stash: " . $pending_stash . "\n";
+                print "difference: " . ($balance - $pending_stash) . "\n";
+            }
             // check we can afford this bet, else give up
             if ($bet > $balance - $pending_stash)
                 return array($total_stashed, $pending_stash,
@@ -220,17 +232,29 @@ function play($balance) {
             if ($win) {
                 $win_count++;
                 $net_win = $balance - $pending_stash - $starting_balance;
+                if (DEBUG)
+                    print "net_win = balance $balance - pending $pending_stash - starting $starting_balance = $net_win\n";
                 $stash_amount = $net_win * STASH_PERCENTAGE / 100.0;
                 $pending_stash += $stash_amount;
                 $total_stashed += $stash_amount;
+                if (DEBUG) {
+                    print "pending_stash: " . $pending_stash . "\n";
+                    print "total_stashed: " . $total_stashed . "\n";
+                }
                 printf("[ net win: " . BTC_FORMAT . "; stashing %d%% = " . BTC_FORMAT . "; total stashed = " . BTC_FORMAT . " ]\n", $net_win, STASH_PERCENTAGE, $stash_amount, $total_stashed);
 
                 // check whether we have enough winnings to justify
                 // sending to the stash address yet
                 if ($pending_stash >= STASH_THRESHOLD) {
+                    if (DEBUG) {
+                        print "stashing pending $pending_stash\n";
+                        print "before: balance: " . get_balance() . " or $balance\n";
+                    }
                     stash_coin($pending_stash);
                     $pending_stash = 0;
                     $balance = get_balance();
+                    if (DEBUG)
+                        print "after: balance: " . get_balance() . "\n";
                 }
 
                 // three positive reasons for stopping play:
@@ -265,11 +289,9 @@ function play($balance) {
 
 function main() {
     check_bitcoin_connection();
-    set_fee(FEE_WHILE_PLAYING);
     $start_balance = get_balance();
     list ($stashed, $pending_stash, $status) = play($start_balance);
     $final_balance = get_balance();
-    set_fee(FEE_AFTER_PLAYING);
 
     printf("\n\nstopped playing because: '%s'\n\n", $status);
     printf(" starting balance: " . BTC_FORMAT . "\n", $start_balance);

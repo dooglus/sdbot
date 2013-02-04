@@ -80,6 +80,8 @@ define('FEE_AFTER_PLAYING',             0);
 // %11.8f means 11 characters wide, with 8 decimal digits (12.12345678)
 define('BTC_FORMAT',                    '%11.8f BTC');
 
+define('DRY_RUN',                       true);
+
 define('DEBUG',                         false);
 
 $bitcoin = new jsonRPCClient('http://'.RPCUSER.':'.RPCPASSWORD.'@127.0.0.1:8332/');
@@ -219,6 +221,8 @@ function play($balance) {
                 printf("confirmed_balance = " . BTC_FORMAT . "\n", get_confirmed_balance());
                 printf("         this bet = " . BTC_FORMAT . "\n", $bet);
             }
+
+            if (DRY_RUN) return array($total_stashed, $pending_stash, "dry run");
 
             send_bet($bet);
             $bet_count++;

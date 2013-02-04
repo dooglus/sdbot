@@ -75,7 +75,7 @@ define('FEE_AFTER_PLAYING',             0);
 
 // width and precision of BTC formatting
 // %11.8f means 11 characters wide, with 8 decimal digits (12.12345678)
-define('BTC_FORMAT',                    '%8.4f BTC');
+define('BTC_FORMAT',                    '%10.6f BTC');
 
 // show min and max bets then quit without betting; so we can check things are sane before playing
 define('DRY_RUN',                       false);

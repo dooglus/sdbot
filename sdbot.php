@@ -28,11 +28,11 @@ define('STASH_ADDRESS',                 '1Doog7asLrYah3yeUppBVj8nUYnFkmXm2N');
 // is the net winnings, right?  so if we lose 1, lose 2, win 4 then we
 // stash some percentage of 1 coin, not of the 4 coins we won in the end?)
 // use 0 to never stash winnings away.
-define('STASH_PERCENTAGE',              50); // %
+define('STASH_PERCENTAGE',              90); // %
 
 // save up stashed amounts in the wallet until they reach this threshold (saves network fees)
 // set to 0 if you want to actually transfer stashed coins after every win, no matter how small
-define('STASH_THRESHOLD',               0.02); 
+define('STASH_THRESHOLD',               0.025); 
 
 // what percentage of our balance do we bet as the first bet
 define('MIN_BET_AS_BALANCE_PERCENTAGE', 0.5); // %
@@ -47,10 +47,10 @@ define('TARGET_WINNINGS',               0.05);
 define('TARGET_WINS',                   30); 
 
 // stop once ratio wins/losses is greater than this BUT...
-define('TARGET_WINS_TO_LOSSES_RATIO',   0.8); 
+define('TARGET_WINS_TO_LOSSES_RATIO',   1.9); 
 
 // ... only if we have placed at least this many bets
-define('MIN_BETS_FOR_RATIO_RULE',       5);
+define('MIN_BETS_FOR_RATIO_RULE',       10);
 
 // satoshidice bet address
 define('BET_ADDRESS',                   '1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp');
@@ -197,13 +197,6 @@ function play($balance) {
         $bet = $min_bet;
 
         while ($bet <= $max_bet) {
-            // show stats so far
-            if ($lose_count)
-                $ratio = sprintf("%7.5f", $win_count / $lose_count);
-            else
-                $ratio = ' (inf) ';
-            printf("%2d : Won %2d; Lost %2d; W:L ratio %s   bet " . BTC_FORMAT . "\n", $bet_count+1, $win_count, $lose_count, $ratio, $bet);
-
             // check we can afford this bet, else give up
             if ($bet > $balance - $pending_stash)
                 return array($total_stashed, $pending_stash,
@@ -213,19 +206,26 @@ function play($balance) {
             if ((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet) ||
                 (WAIT_FOR_ALL_CONFIRMS && $confirmed_balance != $balance)) {
                 $unconfirmed_balance = $balance - $confirmed_balance;
-                printf("waiting for coins to confirm.  bet = " . BTC_FORMAT . "; confirmed = " . BTC_FORMAT . "; unconfirmed = " . BTC_FORMAT . "\n",
+                printf("[ waiting for coins to confirm.  bet = " . BTC_FORMAT . "; confirmed = " . BTC_FORMAT . "; unconfirmed = " . BTC_FORMAT . " ",
                        $bet, $confirmed_balance, $unconfirmed_balance);
                 while (((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet)) ||
                        (WAIT_FOR_ALL_CONFIRMS && $confirmed_balance != $balance)) {
                     print ".";
                     sleep(10);
                 }
-                print "\n";
+                print " ]\n";
             } else if (DEBUG) {
                 print "no need to wait for confirmations\n";
                 printf("confirmed_balance = " . BTC_FORMAT . "\n", get_confirmed_balance());
                 printf("         this bet = " . BTC_FORMAT . "\n", $bet);
             }
+
+            // show stats so far
+            if ($lose_count)
+                $ratio = sprintf("%7.5f", $win_count / $lose_count);
+            else
+                $ratio = ' (inf) ';
+            printf("%2d : Won %2d; Lost %2d; W:L ratio %s   bet " . BTC_FORMAT . " ", $bet_count+1, $win_count, $lose_count, $ratio, $bet);
 
             if (DRY_RUN) return array($total_stashed, $pending_stash, "dry run");
 
@@ -246,7 +246,7 @@ function play($balance) {
                 sleep(3);
                 print ".";
             }
-            print "\n";
+            print " ";
 
             if (DEBUG) printf("new balance = " . BTC_FORMAT . "\n", $balance);
 

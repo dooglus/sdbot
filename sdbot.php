@@ -154,16 +154,17 @@ function play($balance) {
                          sprintf("balance " . BTC_FORMAT . " gives min_bet " . BTC_FORMAT . " which is less than SD's min bet of " . BTC_FORMAT,
                                  $balance - $pending_stash, $min_bet, SD_MIN_BET));
 
-        printf("\nstarting new round; balance " . BTC_FORMAT . "; min: " . BTC_FORMAT . "; max: " . BTC_FORMAT . "\n", $balance, $min_bet, $max_bet);
+        printf("\nstarting new round; balance " . BTC_FORMAT . "; min: " . BTC_FORMAT . "; max: " . BTC_FORMAT . "\n",
+               $balance - $pending_stash, $min_bet, $max_bet);
 
-        $starting_balance = $balance;
+        $starting_balance = $balance - $pending_stash;
         $bet = $min_bet;
 
         while ($bet <= $max_bet) {
             // check we can afford this bet, else give up
             if ($bet > $balance - $pending_stash)
                 return array($total_stashed, $pending_stash,
-                             sprintf("can't afford bet of " . BTC_FORMAT . " with balance " . BTC_FORMAT, $bet, $balance));
+                             sprintf("can't afford bet of " . BTC_FORMAT . " with balance " . BTC_FORMAT, $bet, $balance - $pending_stash));
 
             // wait for confirms if necessary
             if ((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet) ||
@@ -220,7 +221,7 @@ function play($balance) {
 
             if ($win) {
                 $win_count++;
-                $net_win = $balance - $starting_balance;
+                $net_win = $balance - $pending_stash - $starting_balance;
                 $stash_amount = $net_win * STASH_PERCENTAGE / 100.0;
                 $pending_stash += $stash_amount;
                 $total_stashed += $stash_amount;

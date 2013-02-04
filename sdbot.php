@@ -63,6 +63,12 @@ define('BET_MULTIPLIER',                2);
 // should we wait until we have enough confirmed funds?
 define('WAIT_FOR_CONFIRMS',             true);
 
+// should we wait until every transaction in the wallet is confirmed?
+// this shouldn't be necessary, but the $bitcoin->getbalance('*', 1);
+// function treats unconfirmed change as confirmed, which messes things
+// up; see below for details, and a patch to bitcoind to fix this issue.
+define('WAIT_FOR_ALL_CONFIRMS',         false);
+
 // set min fee while playing
 define('FEE_WHILE_PLAYING',             0.001);
 
@@ -195,12 +201,14 @@ function play($balance) {
                 return array($total_stashed, $pending_stash,
                              sprintf("can't afford bet of " . BTC_FORMAT . " with balance " . BTC_FORMAT . "", $bet, $balance));
 
-            // wait for confirms if confirmed funds aren't enough for this bet, and if configured to do so
-            if (WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet) {
+            // wait for confirms if necessary
+            if ((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet) ||
+                (WAIT_FOR_ALL_CONFIRMS && $confirmed_balance != $balance)) {
                 $unconfirmed_balance = $balance - $confirmed_balance;
                 printf("waiting for coins to confirm.  bet = " . BTC_FORMAT . "; confirmed = " . BTC_FORMAT . "; unconfirmed = " . BTC_FORMAT . "\n",
                        $bet, $confirmed_balance, $unconfirmed_balance);
-                while (($confirmed_balance = get_confirmed_balance()) < $bet) {
+                while (((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet)) ||
+                       (WAIT_FOR_ALL_CONFIRMS && $confirmed_balance != $balance)) {
                     print ".";
                     sleep(10);
                 }

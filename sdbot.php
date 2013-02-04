@@ -87,10 +87,13 @@ define('DEBUG',                         false);
 
 $bitcoin = new jsonRPCClient('http://'.RPCUSER.':'.RPCPASSWORD.'@127.0.0.1:8332/');
 
-try {
-    $bitcoin->getbalance();
-} catch (Exception $e) {
-    die("can't connect to bitcoin - did you set rpcuser and rpcpassword in this script and in ~/.bitcoin/bitcoin.conf ?\n");
+function check_bitcoin_connection() {
+    global $bitcoin;
+    try {
+        $bitcoin->getbalance();
+    } catch (Exception $e) {
+        die("can't connect to bitcoin - did you set rpcuser and rpcpassword in this script and in ~/.bitcoin/bitcoin.conf ?\n");
+    }
 }
 
 function set_fee($fee) {
@@ -297,6 +300,7 @@ function play($balance) {
 }
 
 function main() {
+    check_bitcoin_connection();
     set_fee(FEE_WHILE_PLAYING);
     $start_balance = get_balance();
     list ($stashed, $pending_stash, $status) = play($start_balance);

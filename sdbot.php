@@ -35,7 +35,7 @@ define('STASH_PERCENTAGE',              90); // %
 define('STASH_THRESHOLD',               0.025); 
 
 // what percentage of our balance do we bet as the first bet
-define('MIN_BET_AS_BALANCE_PERCENTAGE', 0.5); // %
+define('MIN_BET_AS_BALANCE_PERCENTAGE', 1); // %
 
 // what percentage of our balance are we willing to bet in one go
 define('MAX_BET_AS_BALANCE_PERCENTAGE', 30); // %
@@ -191,7 +191,7 @@ function play($balance) {
                          sprintf("balance " . BTC_FORMAT . " gives min_bet " . BTC_FORMAT . " which is less than SD's min bet of " . BTC_FORMAT,
                                  $balance - $pending_stash, $min_bet, SD_MIN_BET));
 
-        printf("starting new round; balance " . BTC_FORMAT . "; min: " . BTC_FORMAT . "; max: " . BTC_FORMAT . "\n", $balance, $min_bet, $max_bet);
+        printf("\nstarting new round; balance " . BTC_FORMAT . "; min: " . BTC_FORMAT . "; max: " . BTC_FORMAT . "\n", $balance, $min_bet, $max_bet);
 
         $starting_balance = $balance;
         $bet = $min_bet;
@@ -206,12 +206,12 @@ function play($balance) {
             if ((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet) ||
                 (WAIT_FOR_ALL_CONFIRMS && $confirmed_balance != $balance)) {
                 $unconfirmed_balance = $balance - $confirmed_balance;
-                printf("[ waiting for coins to confirm.  bet = " . BTC_FORMAT . "; confirmed = " . BTC_FORMAT . "; unconfirmed = " . BTC_FORMAT . " ",
+                printf("[ wait for confirms; bet = " . BTC_FORMAT . "; confirmed = " . BTC_FORMAT . "; unconfirmed = " . BTC_FORMAT . " ",
                        $bet, $confirmed_balance, $unconfirmed_balance);
                 while (((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet)) ||
                        (WAIT_FOR_ALL_CONFIRMS && $confirmed_balance != $balance)) {
                     print ".";
-                    sleep(10);
+                    sleep(30);
                 }
                 print " ]\n";
             } else if (DEBUG) {
@@ -261,7 +261,7 @@ function play($balance) {
                 $stash_amount = $net_win * STASH_PERCENTAGE / 100.0;
                 $pending_stash += $stash_amount;
                 $total_stashed += $stash_amount;
-                printf("net win: " . BTC_FORMAT . "; stashing %d%% = " . BTC_FORMAT . "; total stashed = " . BTC_FORMAT . "\n", $net_win, STASH_PERCENTAGE, $stash_amount, $total_stashed);
+                printf("[ net win: " . BTC_FORMAT . "; stashing %d%% = " . BTC_FORMAT . "; total stashed = " . BTC_FORMAT . " ]\n", $net_win, STASH_PERCENTAGE, $stash_amount, $total_stashed);
 
                 // check whether we have enough winnings to justify
                 // sending to the stash address yet

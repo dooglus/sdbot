@@ -271,7 +271,7 @@ function main() {
     $final_balance = get_balance();
     set_fee(FEE_AFTER_PLAYING);
 
-    printf("\n stopped playing because: '%s'\n", $status);
+    printf("\n stopped playing because: '%s'\n\n", $status);
     printf(" starting balance: " . BTC_FORMAT . "\n", $start_balance);
     printf("   stashed amount: " . BTC_FORMAT . " + " . BTC_FORMAT . " pending\n", $stashed - $pending_stash, $pending_stash);
     printf("   ending balance: " . BTC_FORMAT . "\n", $final_balance);

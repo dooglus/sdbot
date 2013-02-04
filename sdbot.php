@@ -30,6 +30,7 @@ define('STASH_ADDRESS',                 '1Doog7asLrYah3yeUppBVj8nUYnFkmXm2N');
 define('STASH_PERCENTAGE',              50); 
 
 // save up stashed amounts in the wallet until they reach this threshold (saves network fees)
+// set to 0 if you want to actually transfer stashed coins after every win, no matter how small
 define('STASH_THRESHOLD',               0.02); 
 
 // what percentage of our balance do we bet as the first bet
@@ -190,7 +191,7 @@ function play($balance) {
             printf("%2d : Won %2d; Lost %2d; W:L ratio %s   bet " . BTC_FORMAT . "\n", $bet_count+1, $win_count, $lose_count, $ratio, $bet);
 
             // check we can afford this bet, else give up
-            if (0 && $bet > $balance)
+            if ($bet > $balance - $pending_stash)
                 return array($total_stashed, $pending_stash,
                              sprintf("can't afford bet of " . BTC_FORMAT . " with balance " . BTC_FORMAT . "", $bet, $balance));
 

@@ -27,6 +27,7 @@ define('STASH_ADDRESS',                 '1Doog7asLrYah3yeUppBVj8nUYnFkmXm2N');
 // what percentage of our winnings to send to the stash address (this
 // is the net winnings, right?  so if we lose 1, lose 2, win 4 then we
 // stash some percentage of 1 coin, not of the 4 coins we won in the end?)
+// use 0 to never stash winnings away.
 define('STASH_PERCENTAGE',              50); 
 
 // save up stashed amounts in the wallet until they reach this threshold (saves network fees)

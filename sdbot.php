@@ -268,7 +268,7 @@ function play($balance) {
 
                 // three positive reasons for stopping play:
                 // 1. we stashed enough winnings
-                if ($stash_amount >= TARGET_WINNINGS)
+                if ($total_stashed >= TARGET_WINNINGS)
                     return array($total_stashed, $pending_stash,
                                  sprintf("reached stash target " . BTC_FORMAT, TARGET_WINNINGS));
 

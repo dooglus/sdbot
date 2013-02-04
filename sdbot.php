@@ -28,17 +28,17 @@ define('STASH_ADDRESS',                 '1Doog7asLrYah3yeUppBVj8nUYnFkmXm2N');
 // is the net winnings, right?  so if we lose 1, lose 2, win 4 then we
 // stash some percentage of 1 coin, not of the 4 coins we won in the end?)
 // use 0 to never stash winnings away.
-define('STASH_PERCENTAGE',              50); 
+define('STASH_PERCENTAGE',              50); // %
 
 // save up stashed amounts in the wallet until they reach this threshold (saves network fees)
 // set to 0 if you want to actually transfer stashed coins after every win, no matter how small
 define('STASH_THRESHOLD',               0.02); 
 
 // what percentage of our balance do we bet as the first bet
-define('MIN_BET_AS_BALANCE_PERCENTAGE', 0.53);
+define('MIN_BET_AS_BALANCE_PERCENTAGE', 0.5); // %
 
 // what percentage of our balance are we willing to bet in one go
-define('MAX_BET_AS_BALANCE_PERCENTAGE', 30);
+define('MAX_BET_AS_BALANCE_PERCENTAGE', 30); // %
 
 // stop once we've sent this much to the stash address
 define('TARGET_WINNINGS',               0.05);
@@ -78,9 +78,10 @@ define('FEE_AFTER_PLAYING',             0);
 
 // width and precision of BTC formatting
 // %11.8f means 11 characters wide, with 8 decimal digits (12.12345678)
-define('BTC_FORMAT',                    '%11.8f BTC');
+define('BTC_FORMAT',                    '%8.4f BTC');
 
-define('DRY_RUN',                       true);
+// show min and max bets then quit without betting; so we can check things are sane before playing
+define('DRY_RUN',                       false);
 
 define('DEBUG',                         false);
 
@@ -302,7 +303,7 @@ function main() {
     $final_balance = get_balance();
     set_fee(FEE_AFTER_PLAYING);
 
-    printf(" stopped playing because: '%s'\n", $status);
+    printf("\n stopped playing because: '%s'\n", $status);
     printf(" starting balance: " . BTC_FORMAT . "\n", $start_balance);
     printf("   stashed amount: " . BTC_FORMAT . " + " . BTC_FORMAT . " pending\n", $stashed - $pending_stash, $pending_stash);
     printf("   ending balance: " . BTC_FORMAT . "\n", $final_balance);

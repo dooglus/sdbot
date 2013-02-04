@@ -139,7 +139,6 @@ function send_coins($amount, $address) {
     if (DEBUG) printf("sending " . BTC_FORMAT . " to %s\n", $amount, $address);
     while (true) {
         try {
-            exit;
             $bitcoin->sendtoaddress($address, $amount);
             break;
         } catch (Exception $e) {

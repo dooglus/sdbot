@@ -188,7 +188,8 @@ function play($balance) {
 
         if ($min_bet < SD_MIN_BET)
             return array($total_stashed, $pending_stash,
-                         sprintf("balance " . BTC_FORMAT . " gives min_bet %11.8 which is less than SD's min bet of " . BTC_FORMAT . "", SD_MIN_BET));
+                         sprintf("balance " . BTC_FORMAT . " gives min_bet " . BTC_FORMAT . " which is less than SD's min bet of " . BTC_FORMAT,
+                                 $balance - $pending_stash, $min_bet, SD_MIN_BET));
 
         printf("starting new round; balance " . BTC_FORMAT . "; min: " . BTC_FORMAT . "; max: " . BTC_FORMAT . "\n", $balance, $min_bet, $max_bet);
 
@@ -206,7 +207,7 @@ function play($balance) {
             // check we can afford this bet, else give up
             if ($bet > $balance - $pending_stash)
                 return array($total_stashed, $pending_stash,
-                             sprintf("can't afford bet of " . BTC_FORMAT . " with balance " . BTC_FORMAT . "", $bet, $balance));
+                             sprintf("can't afford bet of " . BTC_FORMAT . " with balance " . BTC_FORMAT, $bet, $balance));
 
             // wait for confirms if necessary
             if ((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet) ||
@@ -273,7 +274,7 @@ function play($balance) {
                 // 1. we stashed enough winnings
                 if ($stash_amount >= TARGET_WINNINGS)
                     return array($total_stashed, $pending_stash,
-                                 sprintf("reached stash target " . BTC_FORMAT . "", TARGET_WINNINGS));
+                                 sprintf("reached stash target " . BTC_FORMAT, TARGET_WINNINGS));
 
                 // 2. we won enough times
                 if ($win_count == TARGET_WINS)

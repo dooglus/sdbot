@@ -38,7 +38,7 @@ define('STASH_THRESHOLD',               0.025);
 define('MIN_BET_AS_BALANCE_PERCENTAGE', 1); // %
 
 // what percentage of our balance are we willing to bet in one go
-define('MAX_BET_AS_BALANCE_PERCENTAGE', 30); // %
+define('MAX_BET_AS_BALANCE_PERCENTAGE', 50); // %
 
 // stop once we've sent this much to the stash address
 define('TARGET_WINNINGS',               0.05);
@@ -63,12 +63,6 @@ define('BET_MULTIPLIER',                2);
 
 // should we wait until we have enough confirmed funds?
 define('WAIT_FOR_CONFIRMS',             true);
-
-// should we wait until every transaction in the wallet is confirmed?
-// this shouldn't be necessary, but the $bitcoin->getbalance('*', 1);
-// function treats unconfirmed change as confirmed, which messes things
-// up; see below for details, and a patch to bitcoind to fix this issue.
-define('WAIT_FOR_ALL_CONFIRMS',         false);
 
 // set min fee while playing
 define('FEE_WHILE_PLAYING',             0.001);
@@ -106,50 +100,19 @@ function get_balance() {
     return $bitcoin->getbalance('*', 0);
 }
 
-// This doesn't work at all well, because the result it gets from
-// bitcoin-qt includes any unconfirmed change from our bets but SD
-// considers unconfirmed change as unconfirmed, and so delays
+// getbalance '*' 1 doesn't work at all well for getting confirmed
+// balance, because it includes any unconfirmed change from our bets
+// but SD considers unconfirmed change as unconfirmed, and so delays
 // processing our bets.  We'd be better off waiting to see which of
 // our inputs confirms first, and using those to bet rather than
 // betting with unconfirmed change that may not make it into a block
 // soon.
-
-// Applying the following patch to the bitcoin source code and
-// rebuilding fixes the issue, but is probably too much to ask of most
-// players.  I suppose we could just wait for all funds to confirm
-// before placing each bet, but that really slows things down.
-
-/* ------------------------------------------------------------------------
-diff --git a/src/rpcwallet.cpp b/src/rpcwallet.cpp
-index 90a68f5..d069467 100644
---- a/src/rpcwallet.cpp
-+++ b/src/rpcwallet.cpp
-@@ -527,19 +527,8 @@ Value getbalance(const Array& params, bool fHelp)
-             if (!wtx.IsFinal())
-                 continue;
- 
--            int64 allFee;
--            string strSentAccount;
--            list<pair<CTxDestination, int64> > listReceived;
--            list<pair<CTxDestination, int64> > listSent;
--            wtx.GetAmounts(listReceived, listSent, allFee, strSentAccount);
-             if (wtx.GetDepthInMainChain() >= nMinDepth)
--            {
--                BOOST_FOREACH(const PAIRTYPE(CTxDestination,int64)& r, listReceived)
--                    nBalance += r.second;
--            }
--            BOOST_FOREACH(const PAIRTYPE(CTxDestination,int64)& r, listSent)
--                nBalance -= r.second;
--            nBalance -= allFee;
-+                nBalance += wtx.GetAvailableCredit();
-         }
-         return  ValueFromAmount(nBalance);
-     }
- * ------------------------------------------------------------------------ */
-
 function get_confirmed_balance() {
     global $bitcoin;
-    return $bitcoin->getbalance('*', 1);
+    $unspent = 0;
+    foreach ($bitcoin->listunspent(1) as $tx)
+        $unspent += $tx['amount'];
+    return $unspent;
 }
 
 function send_coins($amount, $address) {
@@ -243,7 +206,7 @@ function play($balance) {
 
             // wait for the balance to change, indicating the SD payment arrived
             while (($balance = get_balance()) == $balance_after_betting) {
-                sleep(3);
+                sleep(10);
                 print ".";
             }
             print " ";
@@ -268,6 +231,7 @@ function play($balance) {
                 if ($pending_stash >= STASH_THRESHOLD) {
                     stash_coin($pending_stash);
                     $pending_stash = 0;
+                    $balance = get_balance();
                 }
 
                 // three positive reasons for stopping play:

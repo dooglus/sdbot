@@ -167,13 +167,11 @@ function play($balance) {
                              sprintf("can't afford bet of " . BTC_FORMAT . " with balance " . BTC_FORMAT, $bet, $balance - $pending_stash));
 
             // wait for confirms if necessary
-            if ((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet) ||
-                (WAIT_FOR_ALL_CONFIRMS && $confirmed_balance != $balance)) {
+            if (WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet) {
                 $unconfirmed_balance = $balance - $confirmed_balance;
                 printf("[ wait for confirms; bet = " . BTC_FORMAT . "; confirmed = " . BTC_FORMAT . "; unconfirmed = " . BTC_FORMAT . " ",
                        $bet, $confirmed_balance, $unconfirmed_balance);
-                while (((WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet)) ||
-                       (WAIT_FOR_ALL_CONFIRMS && $confirmed_balance != $balance)) {
+                while (WAIT_FOR_CONFIRMS && ($confirmed_balance = get_confirmed_balance()) < $bet) {
                     print ".";
                     sleep(30);
                 }

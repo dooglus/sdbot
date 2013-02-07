@@ -40,8 +40,14 @@ define('STASH_PERCENTAGE',              90); // %
 // set to 0 if you want to actually transfer stashed coins after every win, no matter how small
 define('STASH_THRESHOLD',               0.025); 
 
+// if this isn't zero, then we will always use this as the starting bet, and will ignore the next setting
+define('FIXED_MIN_BET', 0.01);
+
 // what percentage of our balance do we bet as the first bet
 define('MIN_BET_AS_BALANCE_PERCENTAGE', 0.9); // %
+
+// if this isn't zero, then we will always use this as the max bet, and will ignore the next setting
+define('FIXED_MAX_BET', 10.25);
 
 // what percentage of our balance are we willing to bet in one go
 define('MAX_BET_AS_BALANCE_PERCENTAGE', 100); // %
@@ -57,6 +63,9 @@ define('TARGET_WINS_TO_LOSSES_RATIO',   1.9);
 
 // ... only if we have placed at least this many bets
 define('MIN_BETS_FOR_RATIO_RULE',       10);
+
+// each time we win a bet, the bot will stop and report overall profits if this file exists
+define('STOP_ON_WIN_IF_EXISTS',         'stop.txt');
 
 // satoshidice bet address
 define('BET_ADDRESS',                   '1dice8EMZmqKvrGE4Qc9bUFf9PX3xaYDp');
@@ -208,8 +217,15 @@ function play($balance) {
     while (true) {
         // treat winnings which we intend to stash but didn't yet as
         // if they're not in the wallet for min and max bet calculation purposes
-        $min_bet = ($balance - $pending_stash) * MIN_BET_AS_BALANCE_PERCENTAGE / 100.0;
-        $max_bet = ($balance - $pending_stash) * MAX_BET_AS_BALANCE_PERCENTAGE / 100.0;
+        if (FIXED_MIN_BET)
+            $min_bet = FIXED_MIN_BET;
+        else
+            $min_bet = ($balance - $pending_stash) * MIN_BET_AS_BALANCE_PERCENTAGE / 100.0;
+
+        if (FIXED_MAX_BET)
+            $max_bet = FIXED_MAX_BET;
+        else
+            $max_bet = ($balance - $pending_stash) * MAX_BET_AS_BALANCE_PERCENTAGE / 100.0;
 
         if ($min_bet < SD_MIN_BET)
             return array($total_stashed, $pending_stash,
@@ -337,6 +353,11 @@ function play($balance) {
                     return array($total_stashed, $pending_stash,
                                  sprintf("reached win:loss ratio target %f with %d (at least %d) bets",
                                          TARGET_WINS_TO_LOSSES_RATIO, $bet_count, MIN_BETS_FOR_RATIO_RULE));
+
+                // 4. STOP_ON_WIN file exists - it's a manual way of quitting on the next win
+                if (file_exists(STOP_ON_WIN_IF_EXISTS))
+                    return array($total_stashed, $pending_stash,
+                                 "we won, and file '" . STOP_ON_WIN_IF_EXISTS . "' exists");
 
                 // break to the outer loop, to recalculate min and max bet sizes
                 break;

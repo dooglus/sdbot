@@ -24,8 +24,11 @@ define('RPCPASSWORD', 'mypass');
 // address to stash our winnings to keep them safe
 define('STASH_ADDRESS',                 '1Doog7asLrYah3yeUppBVj8nUYnFkmXm2N');
 
-// set to false (no quotes) if your wallet isn't encrypted
-define('WALLET_PASSPHRASE',             'mysupersecretpassphrase');
+// set to false (no quotes) if your wallet isn't encrypted, or set to
+// "prompt" if you want to be prompted each time you run the script
+// (this is the best thing to do - it's dangerous to save your
+// passphrase in a script)
+define('WALLET_PASSPHRASE',             'prompt');
 
 // what percentage of our winnings to send to the stash address (this
 // is the net winnings, right?  so if we lose 1, lose 2, win 4 then we
@@ -96,6 +99,32 @@ function check_bitcoin_connection() {
     }
 }
 
+function prompt_silent($prompt = "Enter Password:") {
+    if (preg_match('/^win/i', PHP_OS)) {
+        $vbscript = sys_get_temp_dir() . 'prompt_password.vbs';
+        file_put_contents(
+            $vbscript, 'wscript.echo(InputBox("'
+            . addslashes($prompt)
+            . '", "", "password here"))');
+        $command = "cscript //nologo " . escapeshellarg($vbscript);
+        $password = rtrim(shell_exec($command));
+        unlink($vbscript);
+        return $password;
+    } else {
+        $command = "/usr/bin/env bash -c 'echo OK'";
+        if (rtrim(shell_exec($command)) !== 'OK') {
+            trigger_error("Can't invoke bash");
+            return;
+        }
+        $command = "/usr/bin/env bash -c 'read -s -p \""
+            . addslashes($prompt)
+            . "\" mypassword && echo \$mypassword'";
+        $password = rtrim(shell_exec($command));
+        echo "\n";
+        return $password;
+    }
+}
+
 function set_fee($fee) {
     global $bitcoin;
     $bitcoin->settxfee($fee);
@@ -122,12 +151,12 @@ function get_confirmed_balance() {
 }
 
 function send_coins($amount, $address) {
-    global $bitcoin;
+    global $bitcoin, $wallet_passphrase;
     if (DEBUG) printf("sending " . BTC_FORMAT . " to %s\n", $amount, $address);
 
-    if (WALLET_PASSPHRASE) {
+    if ($wallet_passphrase) {
         try {
-            $bitcoin->walletpassphrase(WALLET_PASSPHRASE, 60);
+            $bitcoin->walletpassphrase($wallet_passphrase, 60);
         } catch (Exception $e) {
             print "\n";
             die($e->getMessage() . "\n");
@@ -310,7 +339,18 @@ function play($balance) {
 }
 
 function main() {
+    global $wallet_passphrase;
+
     check_bitcoin_connection();
+
+    if (WALLET_PASSPHRASE) {
+        if (WALLET_PASSPHRASE == 'prompt')
+            $wallet_passphrase = prompt_silent("Enter Wallet Passphrase:");
+        else
+            $wallet_passphrase = WALLET_PASSPHRASE;
+    } else
+        $wallet_passphrase = false;
+
     $start_balance = get_balance();
     list ($stashed, $pending_stash, $status) = play($start_balance);
     $final_balance = get_balance();

@@ -22,7 +22,10 @@ define('RPCUSER',     'myuser');
 define('RPCPASSWORD', 'mypass');
 
 // address to stash our winnings to keep them safe
-define('STASH_ADDRESS',                 '1Doog7asLrYah3yeUppBVj8nUYnFkmXm2N');                             
+define('STASH_ADDRESS',                 '1Doog7asLrYah3yeUppBVj8nUYnFkmXm2N');
+
+// set to false (no quotes) if your wallet isn't encrypted
+define('WALLET_PASSPHRASE',             'mysupersecretpassphrase');
 
 // what percentage of our winnings to send to the stash address (this
 // is the net winnings, right?  so if we lose 1, lose 2, win 4 then we
@@ -121,6 +124,16 @@ function get_confirmed_balance() {
 function send_coins($amount, $address) {
     global $bitcoin;
     if (DEBUG) printf("sending " . BTC_FORMAT . " to %s\n", $amount, $address);
+
+    if (WALLET_PASSPHRASE) {
+        try {
+            $bitcoin->walletpassphrase(WALLET_PASSPHRASE, 60);
+        } catch (Exception $e) {
+            print "\n";
+            die($e->getMessage() . "\n");
+        }
+    }
+
     while (true) {
         try {
             $bitcoin->sendtoaddress($address, $amount);

@@ -158,8 +158,11 @@ function send_coins($amount, $address) {
         try {
             $bitcoin->walletpassphrase($wallet_passphrase, 60);
         } catch (Exception $e) {
-            print "\n";
-            die($e->getMessage() . "\n");
+            $message = $e->getMessage();
+            if (strpos($message, "wallet passphrase entered was incorrect") !== FALSE) {
+                print "\n";
+                die("$message\n");
+            }
         }
     }
 

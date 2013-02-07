@@ -150,21 +150,31 @@ function get_confirmed_balance() {
     return $unspent;
 }
 
-function send_coins($amount, $address) {
+function unlock_wallet() {
     global $bitcoin, $wallet_passphrase;
-    if (DEBUG) printf("sending " . BTC_FORMAT . " to %s\n", $amount, $address);
 
     if ($wallet_passphrase) {
         try {
             $bitcoin->walletpassphrase($wallet_passphrase, 60);
         } catch (Exception $e) {
             $message = $e->getMessage();
-            if (strpos($message, "wallet passphrase entered was incorrect") !== FALSE) {
-                print "\n";
-                die("$message\n");
+            $json = json_decode(substr($message, strlen('Request error: ')), true);
+            if ($json['code'] == -14) { // "Error: The wallet passphrase entered was incorrect."
+                print "\n\n";
+                die($json['message'] . "\n");
             }
+            if ($json['code'] != -17) // "Error: Wallet is already unlocked."
+                print "\n\n" . $json['message'] . "\n"; // some other error message I haven't anticipated.  perhaps it's important?
         }
     }
+}
+
+function send_coins($amount, $address) {
+    global $bitcoin;
+
+    if (DEBUG) printf("sending " . BTC_FORMAT . " to %s\n", $amount, $address);
+
+    unlock_wallet();
 
     while (true) {
         try {

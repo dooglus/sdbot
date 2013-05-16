@@ -79,6 +79,9 @@ define('BET_MULTIPLIER',                2);
 // should we wait until we have enough confirmed funds?
 define('WAIT_FOR_CONFIRMS',             true);
 
+// after each win, wait until all our funds have at least this many confirmations (0 means don't wait)
+define('WAIT_FOR_CONFIRMS_AFTER_WIN',   6);
+
 // set min fee while playing
 define('FEE_WHILE_PLAYING',             0.0005);
 
@@ -151,10 +154,10 @@ function get_balance() {
 // our inputs confirms first, and using those to bet rather than
 // betting with unconfirmed change that may not make it into a block
 // soon.
-function get_confirmed_balance() {
+function get_confirmed_balance($confirmations = 1) {
     global $bitcoin;
     $unspent = 0;
-    foreach ($bitcoin->listunspent(1) as $tx)
+    foreach ($bitcoin->listunspent($confirmations) as $tx)
         $unspent += $tx['amount'];
     return $unspent;
 }
@@ -358,6 +361,23 @@ function play($balance) {
                 if (file_exists(STOP_ON_WIN_IF_EXISTS))
                     return array($total_stashed, $pending_stash,
                                  "we won, and file '" . STOP_ON_WIN_IF_EXISTS . "' exists");
+
+                // so we're not going to quit yet.  do we need to wait for confirmations? 
+                while (WAIT_FOR_CONFIRMS_AFTER_WIN) {
+                    $confirmed_balance = get_confirmed_balance(WAIT_FOR_CONFIRMS_AFTER_WIN);
+                    $total_balance = get_balance();
+
+                    if ($confirmed_balance == $total_balance)
+                        break;
+
+                    print "\n";
+                    printf("  confirmed balance = %s\n", $confirmed_balance);
+                    printf("      total balance = %s\n", $total_balance);
+                    printf("  ... waiting until everything has %s confirmation%s ...\n",
+                           WAIT_FOR_CONFIRMS_AFTER_WIN,
+                           WAIT_FOR_CONFIRMS_AFTER_WIN == 1 ? '' : 's');
+                    sleep(10);
+                }
 
                 // break to the outer loop, to recalculate min and max bet sizes
                 break;

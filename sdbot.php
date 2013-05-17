@@ -144,7 +144,7 @@ function set_fee($fee) {
     
 function get_balance() {
     global $bitcoin;
-    return $bitcoin->getbalance('*', 0);
+    return sprintf("%.8f", $bitcoin->getbalance('*', 0));
 }
 
 // getbalance '*' 1 doesn't work at all well for getting confirmed
@@ -159,7 +159,7 @@ function get_confirmed_balance($confirmations = 1) {
     $unspent = 0;
     foreach ($bitcoin->listunspent($confirmations) as $tx)
         $unspent += $tx['amount'];
-    return $unspent;
+    return sprintf("%.8f", $unspent);
 }
 
 function unlock_wallet() {

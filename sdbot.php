@@ -82,6 +82,10 @@ define('WAIT_FOR_CONFIRMS',             true);
 // after each win, wait until all our funds have at least this many confirmations (0 means don't wait)
 define('WAIT_FOR_CONFIRMS_AFTER_WIN',   6);
 
+// after each losing bet, wait a random amount of time between these two (in seconds)
+define('MIN_WAIT_AFTER_LOSE',		10);
+define('MAX_WAIT_AFTER_LOSE',		60);
+
 // set min fee while playing
 define('FEE_WHILE_PLAYING',             0.0005);
 
@@ -381,6 +385,12 @@ function play($balance) {
 
                 // break to the outer loop, to recalculate min and max bet sizes
                 break;
+            }
+
+            $sleep = rand(MIN_WAIT_AFTER_LOSE, MAX_WAIT_AFTER_LOSE);
+            if ($sleep) {
+                print "sleeping $sleep seconds after losing a bet\n";
+                sleep($sleep);
             }
 
             $lose_count++;
